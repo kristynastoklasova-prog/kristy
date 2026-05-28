@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🐾 WoofBot – Psí Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #1a1008;
+      --surface:   #2b1d0e;
+      --card:      #3a2610;
+      --accent:    #d97706;
+      --accent2:   #f59e0b;
+      --paw:       #92400e;
+      --text:      #fef3c7;
+      --muted:     #a78040;
+      --bot-bubble:#3d2a12;
+      --user-bubble:#7c3a10;
+      --border:    #5a3a1a;
+      --shadow:    rgba(0,0,0,.6);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-image:
+        radial-gradient(ellipse at 20% 10%, #5c2d0a44 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 90%, #7c3a1030 0%, transparent 50%);
+    }
+
+    /* ── PAW PATTERN BACKGROUND ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cellipse cx='40' cy='52' rx='13' ry='10' fill='%235a3a1a18'/%3E%3Ccircle cx='27' cy='37' r='5' fill='%235a3a1a18'/%3E%3Ccircle cx='53' cy='37' r='5' fill='%235a3a1a18'/%3E%3Ccircle cx='34' cy='28' r='4' fill='%235a3a1a18'/%3E%3Ccircle cx='46' cy='28' r='4' fill='%235a3a1a18'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 780px;
+      padding: 2.5rem 2rem 1.5rem;
+      text-align: center;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 900;
+      color: var(--accent2);
+      text-shadow: 0 0 40px #d9770680;
+      letter-spacing: -1px;
+    }
+
+    .logo span { color: var(--text); }
+
+    .tagline {
+      margin-top: .4rem;
+      font-size: .95rem;
+      color: var(--muted);
+      letter-spacing: .05em;
+    }
+
+    /* ── KYNOLOGY CARDS ── */
+    .info-bar {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 780px;
+      padding: 0 1rem 1.2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: .75rem;
+    }
+
+    .info-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1rem 1.1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: .7rem;
+      transition: transform .2s, border-color .2s;
+      box-shadow: 0 4px 20px var(--shadow);
+    }
+
+    .info-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+    }
+
+    .info-card .icon { font-size: 1.8rem; flex-shrink: 0; }
+
+    .info-card h3 {
+      font-size: .78rem;
+      font-weight: 900;
+      color: var(--accent2);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: .2rem;
+    }
+
+    .info-card p {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* ── CHAT WINDOW ── */
+    .chat-wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 780px;
+      padding: 0 1rem 2rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      height: 420px;
+      box-shadow: 0 8px 40px var(--shadow);
+      overflow: hidden;
+    }
+
+    /* ── MESSAGES ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.4rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: .9rem;
+      scroll-behavior: smooth;
+    }
+
+    #messages::-webkit-scrollbar { width: 6px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .msg {
+      display: flex;
+      gap: .6rem;
+      align-items: flex-end;
+      animation: popIn .25s cubic-bezier(.34,1.56,.64,1) both;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(12px) scale(.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .msg.bot  { flex-direction: row; }
+    .msg.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+    }
+
+    .msg.bot  .avatar { background: var(--paw); }
+    .msg.user .avatar { background: var(--user-bubble); }
+
+    .bubble {
+      max-width: 70%;
+      padding: .7rem 1.1rem;
+      border-radius: 18px;
+      font-size: .92rem;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+
+    .msg.bot  .bubble { background: var(--bot-bubble);  border-bottom-left-radius:  4px; color: var(--text); }
+    .msg.user .bubble { background: var(--user-bubble); border-bottom-right-radius: 4px; color: var(--text); }
+
+    /* learn bubble */
+    .learn-bubble {
+      background: var(--card);
+      border: 1px solid var(--accent);
+      border-radius: 16px;
+      padding: .9rem 1rem;
+      margin: .5rem 0 0 42px;
+      font-size: .88rem;
+      color: var(--text);
+      animation: popIn .25s ease both;
+    }
+
+    .learn-bubble input {
+      margin-top: .5rem;
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .5rem .8rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .learn-bubble input:focus { border-color: var(--accent); }
+
+    .learn-bubble button {
+      margin-top: .5rem;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: .4rem 1rem;
+      color: #1a0800;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      font-size: .85rem;
+      transition: background .2s;
+    }
+
+    .learn-bubble button:hover { background: var(--accent2); }
+
+    /* ── INPUT BAR ── */
+    .input-area {
+      display: flex;
+      gap: .6rem;
+      padding: .9rem 1rem;
+      border-top: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    #userInput {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: .65rem 1rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    #userInput:focus { border-color: var(--accent); }
+    #userInput::placeholder { color: var(--muted); }
+
+    #sendBtn {
+      background: var(--accent);
+      border: none;
+      border-radius: 14px;
+      padding: .65rem 1.3rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+
+    #sendBtn:hover  { background: var(--accent2); }
+    #sendBtn:active { transform: scale(.94); }
+
+    /* ── KNOWN PHRASES ── */
+    .known-section {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 780px;
+      padding: 0 1rem 2rem;
+    }
+
+    .known-section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--accent2);
+      margin-bottom: .7rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+
+    .chip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: .35rem .9rem;
+      font-size: .8rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+
+    .chip:hover {
+      background: var(--paw);
+      color: var(--text);
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">🐾 Woof<span>Bot</span></div>
+  <div class="tagline">Tvůj chytrý psí chatbot — učí se spolu s tebou!</div>
+</header>
+
+<!-- KYNOLOGY INFO CARDS -->
+<section class="info-bar" aria-label="Základy kynologie">
+  <div class="info-card">
+    <div class="icon">🐕</div>
+    <div>
+      <h3>Rasy</h3>
+      <p>Na světě existuje přes 340 uznaných psích plemen FCI.</p>
+    </div>
+  </div>
+  <div class="info-card">
+    <div class="icon">🎓</div>
+    <div>
+      <h3>Výcvik</h3>
+      <p>Pozitivní posilování je nejúčinnější metoda výcviku psů.</p>
+    </div>
+  </div>
+  <div class="info-card">
+    <div class="icon">🏥</div>
+    <div>
+      <h3>Zdraví</h3>
+      <p>Psi potřebují pravidelné očkování, odčervení a preventivní prohlídky.</p>
+    </div>
+  </div>
+  <div class="info-card">
+    <div class="icon">🦴</div>
+    <div>
+      <h3>Výživa</h3>
+      <p>Pes potřebuje vyváženou stravu s proteiny, tuky a minerály.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CHAT -->
+<main class="chat-wrapper">
+  <div class="chat-box">
+    <div id="messages"></div>
+    <div class="input-area">
+      <input id="userInput" type="text" placeholder='Napiš zprávu nebo "konec"…' autocomplete="off"/>
+      <button id="sendBtn" title="Odeslat">🐾</button>
+    </div>
+  </div>
+</main>
+
+<!-- KNOWN PHRASES -->
+<section class="known-section">
+  <h2>🦮 Naučené fráze</h2>
+  <div class="chips" id="chipsContainer"></div>
+</section>
+
+<script>
+  // ── DATA ──
+  const odpovedi = {
+    "ahoj":      "Haf haf! Ahoj! 🐶",
+    "jak se mas":"Štěkám spokojeně, díky za optání! 🐾",
+    "co delas":  "Čekám na tvoje zprávy a mávám ocasem! 🐕",
+    "co jis":    "Dnes jsem měl granule a pamlsek. Yum! 🦴",
+    "jsi hodny": "Samozřejmě! Jsem nejhodnější pes na světě! 😇",
+    "sedni":     "Sedím! Pošli pamlsek! 🐕‍🦺",
+    "lehni":     "Lehám... ale chci odměnu! 🐩",
+    "dej packu": "Tady máš tlapku! 🐾🤝"
+  };
+
+  let pendingLearn = null; // { phrase }
+
+  // ── RENDER CHIPS ──
+  function renderChips() {
+    const c = document.getElementById('chipsContainer');
+    c.innerHTML = '';
+    Object.keys(odpovedi).forEach(phrase => {
+      const el = document.createElement('div');
+      el.className = 'chip';
+      el.textContent = phrase;
+      el.onclick = () => {
+        document.getElementById('userInput').value = phrase;
+        document.getElementById('userInput').focus();
+      };
+      c.appendChild(el);
+    });
+  }
+
+  // ── ADD MESSAGE ──
+  function addMessage(who, text) {
+    const wrap = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `msg ${who}`;
+    div.innerHTML = `
+      <div class="avatar">${who === 'bot' ? '🐶' : '🧑'}</div>
+      <div class="bubble">${text}</div>`;
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  // ── LEARN FORM ──
+  function showLearnForm(phrase) {
+    pendingLearn = phrase;
+    const wrap = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'learn-bubble';
+    div.id = 'learnBubble';
+    div.innerHTML = `
+      <span>🐾 Tomu nerozumím! Jak mám odpovědět na <strong>"${phrase}"</strong>?</span>
+      <input id="learnInput" type="text" placeholder="Napiš odpověď…" autocomplete="off"/>
+      <button onclick="submitLearn()">✅ Naučit</button>`;
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    setTimeout(() => document.getElementById('learnInput')?.focus(), 50);
+  }
+
+  function submitLearn() {
+    const val = document.getElementById('learnInput')?.value.trim();
+    if (!val || !pendingLearn) return;
+    odpovedi[pendingLearn] = val;
+    document.getElementById('learnBubble')?.remove();
+    addMessage('bot', `Díky! Teď už vím, jak odpovědět na „${pendingLearn}". 🐾`);
+    pendingLearn = null;
+    renderChips();
+  }
+
+  // ── SEND ──
+  function send() {
+    if (pendingLearn) return; // waiting for learn input
+
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    addMessage('user', text);
+
+    setTimeout(() => {
+      if (text.toLowerCase() === 'konec') {
+        addMessage('bot', 'Sbohem! 🐾 Přijď zase brzo!');
+        document.getElementById('sendBtn').disabled = true;
+        document.getElementById('userInput').disabled = true;
+        return;
+      }
+
+      const key = text.toLowerCase();
+      if (odpovedi[key]) {
+        addMessage('bot', odpovedi[key]);
+      } else {
+        showLearnForm(key);
+      }
+    }, 300);
+  }
+
+  // ── EVENTS ──
+  document.getElementById('sendBtn').addEventListener('click', send);
+  document.getElementById('userInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (pendingLearn) submitLearn();
+      else send();
+    }
+  });
+
+  // ── INIT ──
+  renderChips();
+  setTimeout(() => addMessage('bot', 'Haf! 🐶 Vítej! Napiš mi cokoliv a já odpovím. Pokud neznám odpověď, naučíš mě ji!'), 400);
+</script>
+</body>
+</html>
